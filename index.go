@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"t_unicorn/authPswdManager"
 	"t_unicorn/jwtHandler"
 	"t_unicorn/meth"
 	"t_unicorn/models"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -108,6 +110,22 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func JWTValidator(w http.ResponseWriter, r *http.Request) {
+	T, err := r.Cookie("access-token")
+	str_t := strings.Replace(T.String(), "access-token=", "", -1)
+	printMessage("TOKEN : " + str_t)
+
+	token, err := jwt.Parse(str_t, func(token *jwt.Token) (interface{}, error) {
+		return []byte("t_unicorn"), nil
+	})
+	meth.CheckErr(err)
+	if _, ok := token.Claims.(jwt.Claims); ok && token.Valid {
+		fmt.Printf("Token valid.")
+	} else {
+		fmt.Println(err)
+	}
+}
+
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	db := setupDB()
 	printMessage("Getting Users..")
@@ -140,6 +158,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/RegistUser", RegistUser).Methods("POST")
 	router.HandleFunc("/GetUsers", GetUsers).Methods("GET")
+	router.HandleFunc("/JWTValidator", JWTValidator).Methods("GET")
 	router.HandleFunc("/GetUser", GetUser).Methods("POST")
 	fmt.Println("Server at 8080")
 	log.Fatal(http.ListenAndServe("localhost:8080", router))
