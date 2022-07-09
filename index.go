@@ -2,6 +2,7 @@ package main
 
 import (
 	"t_unicorn/authPswdManager"
+  "t_unicorn/meth"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -48,11 +49,6 @@ func printMessage(message string) {
 	fmt.Println("")
 }
 
-func checkErr(err error) {
-	if err != nil && err != sql.ErrNoRows {
-		panic(err)
-	}
-}
 
 func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
@@ -71,7 +67,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	`, userName, saltedUserPswd, userEmail)
 	printMessage("Regist Users..")
 	err_1 := db.QueryRow(query_1).Scan(&lastInsertID)
-	checkErr(err_1)
+	meth.CheckErr(err_1)
 	query_2 := fmt.Sprintf(`
 	INSERT INTO t_unicorn.user_auth_salt(
 		user_id, username, salt
@@ -80,7 +76,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	)
 	`, lastInsertID, userName, new_salt)
 	err_2 := db.QueryRow(query_2).Scan(&lastInsertID)
-	checkErr(err_2)
+	meth.CheckErr(err_2)
 	response := JsonResponse{Type: "success", Message: "%s registed."}
 	json.NewEncoder(w).Encode(response)
 }
@@ -100,17 +96,17 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	var salt_hex string
 	for rows.Next() {
 		err := rows.Scan(&salt_hex)
-		checkErr(err)
+		meth.CheckErr(err)
 	}
 	userPswdHash := authPswdManager.HashPassword(userPswd, salt_hex)
-	checkErr(err)
+	meth.CheckErr(err)
 	query := fmt.Sprintf(`
 		select user_id, username, email, created_on from t_unicorn.user_auth ua
 		where ua.username = '%s' and 
 		ua.password = '%s'
 	`, userName, userPswdHash)
 	rows, err = db.Query(query)
-	checkErr(err)
+	meth.CheckErr(err)
 	var users []User
 	for rows.Next() {
 		var user_id int
@@ -119,7 +115,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		var created_on string
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
-		checkErr(err)
+		meth.CheckErr(err)
 		users = append(users, User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
 	var response = JsonResponse{Type: "success__", Data: users}
@@ -130,7 +126,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	db := setupDB()
 	printMessage("Getting Users..")
 	rows, err := db.Query(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
-	checkErr(err)
+	meth.CheckErr(err)
 	fmt.Println(rows.Next())
 	var users []User
 	for rows.Next() {
@@ -140,9 +136,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		var created_on string
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
-
-		// check errors
-		checkErr(err)
+		meth.CheckErr(err)
 		users = append(users, User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
 	var response = JsonResponse{Type: "success", Data: users}
@@ -152,13 +146,12 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func setupDB() *sql.DB {
 	dbinfo := fmt.Sprintf("user = %s password = %s dbname = %s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
 	db, err := sql.Open("postgres", dbinfo)
-	checkErr(err)
+	meth.CheckErr(err)
 	return db
 }
 
 func main() {
 	router := mux.NewRouter()
-	// router.HandleFunc("/Login/", UserLogin).Methods("GET")
 	router.HandleFunc("/RegistUser", RegistUser).Methods("POST")
 	router.HandleFunc("/GetUsers", GetUsers).Methods("GET")
 	router.HandleFunc("/GetUser", GetUser).Methods("POST")
