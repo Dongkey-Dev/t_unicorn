@@ -1,14 +1,16 @@
 package main
 
 import (
-	"t_unicorn/authPswdManager"
-  "t_unicorn/models"
-  "t_unicorn/meth"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"t_unicorn/authPswdManager"
+	"t_unicorn/jwtHandler"
+	"t_unicorn/meth"
+	"t_unicorn/models"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -26,7 +28,6 @@ func printMessage(message string) {
 	fmt.Println(message)
 	fmt.Println("")
 }
-
 
 func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
@@ -62,7 +63,6 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
-
 	db := setupDB()
 	printMessage("Get User like login..")
 	get_salt_query := fmt.Sprintf(`
@@ -96,6 +96,14 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		meth.CheckErr(err)
 		users = append(users, models.User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
+	accessToken, err := jwtHandler.CreateJWT(users[0].UserEmail)
+	meth.CheckErr(err)
+	cookie := new(http.Cookie)
+	cookie.Name = "access-token"
+	cookie.Value = accessToken
+	cookie.HttpOnly = true
+	cookie.Expires = time.Now().Add(time.Hour * 24)
+	http.SetCookie(w, cookie)
 	var response = models.JsonResponse{Type: "success__", Data: users}
 	json.NewEncoder(w).Encode(response)
 }
@@ -134,6 +142,5 @@ func main() {
 	router.HandleFunc("/GetUsers", GetUsers).Methods("GET")
 	router.HandleFunc("/GetUser", GetUser).Methods("POST")
 	fmt.Println("Server at 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe("localhost:8080", router))
 }
-
