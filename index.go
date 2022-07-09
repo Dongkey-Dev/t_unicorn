@@ -2,6 +2,7 @@ package main
 
 import (
 	"t_unicorn/authPswdManager"
+  "t_unicorn/models"
   "t_unicorn/meth"
 	"database/sql"
 	"encoding/json"
@@ -19,29 +20,6 @@ const (
 	DB_NAME     = "test_with_go"
 	SALT_SIZE   = 16
 )
-
-type User struct {
-	UserID        int    `json:"userid"`
-	UserName      string `json:"username"`
-	UserEmail     string `json:"useremail"`
-	UserCreatedOn string `json:"usercreatedon"`
-}
-
-type UserSequenceID struct {
-	nextval int `json:"userid"`
-}
-
-type JsonResponse struct {
-	Type    string `json:"type"`
-	Data    []User `json:"data"`
-	Message string `json:"message"`
-}
-
-type JsonResponseSequenceID struct {
-	Type    string           `json:"type"`
-	Data    []UserSequenceID `json:"data"`
-	Message string           `json:"message"`
-}
 
 func printMessage(message string) {
 	fmt.Println("")
@@ -77,7 +55,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	`, lastInsertID, userName, new_salt)
 	err_2 := db.QueryRow(query_2).Scan(&lastInsertID)
 	meth.CheckErr(err_2)
-	response := JsonResponse{Type: "success", Message: "%s registed."}
+	response := models.JsonResponse{Type: "success", Message: "%s registed."}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -107,7 +85,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	`, userName, userPswdHash)
 	rows, err = db.Query(query)
 	meth.CheckErr(err)
-	var users []User
+	var users []models.User
 	for rows.Next() {
 		var user_id int
 		var username string
@@ -116,9 +94,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
 		meth.CheckErr(err)
-		users = append(users, User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
+		users = append(users, models.User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
-	var response = JsonResponse{Type: "success__", Data: users}
+	var response = models.JsonResponse{Type: "success__", Data: users}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -128,7 +106,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
 	meth.CheckErr(err)
 	fmt.Println(rows.Next())
-	var users []User
+	var users []models.User
 	for rows.Next() {
 		var user_id int
 		var username string
@@ -137,9 +115,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
 		meth.CheckErr(err)
-		users = append(users, User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
+		users = append(users, models.User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
-	var response = JsonResponse{Type: "success", Data: users}
+	var response = models.JsonResponse{Type: "success", Data: users}
 	json.NewEncoder(w).Encode(response)
 }
 
