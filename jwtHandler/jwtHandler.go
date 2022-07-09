@@ -1,7 +1,6 @@
 package jwtHandler
 
 import(
-  "os"
   "time"
   "t_unicorn/meth"
   "github.com/golang-jwt/jwt/v4"
