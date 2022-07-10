@@ -1,13 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"t_unicorn/authPswdManager"
+	"t_unicorn/dbHandler"
 	"t_unicorn/jwtHandler"
 	"t_unicorn/meth"
 	"t_unicorn/models"
@@ -22,7 +22,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
 	userEmail := r.FormValue("email")
-	db := setupDB()
+	db := dbHandler.SetupDB()
 
 	SALT_SIZE := authPswdManager.GetSaltSize()
 	new_salt := authPswdManager.GenerateRandomSaltHex(SALT_SIZE)
@@ -54,7 +54,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
-	db := setupDB()
+	db := dbHandler.SetupDB()
 	meth.PrintMessage("Get User like login..")
 	get_salt_query := fmt.Sprintf(`
 		select salt from t_unicorn.user_auth_salt uas
@@ -116,7 +116,7 @@ func JWTValidator(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	db := setupDB()
+	db := dbHandler.SetupDB()
 	meth.PrintMessage("Getting Users..")
 	rows, err := db.Query(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
 	meth.CheckErr(err)
@@ -134,13 +134,6 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	var response = models.JsonResponse{Type: "success", Data: users}
 	json.NewEncoder(w).Encode(response)
-}
-
-func setupDB() *sql.DB {
-	dbinfo := fmt.Sprintf("user = %s password = %s dbname = %s sslmode=disable", DB_USER, DB_PASSWORD, DB_NAME)
-	db, err := sql.Open("postgres", dbinfo)
-	meth.CheckErr(err)
-	return db
 }
 
 func main() {
