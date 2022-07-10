@@ -18,18 +18,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	DB_USER     = "dongho"
-	DB_PASSWORD = "qwer4321"
-	DB_NAME     = "test_with_go"
-	SALT_SIZE   = 16
-)
-
 func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
 	userEmail := r.FormValue("email")
 	db := setupDB()
+
+	SALT_SIZE := authPswdManager.GetSaltSize()
 	new_salt := authPswdManager.GenerateRandomSaltHex(SALT_SIZE)
 	var lastInsertID int
 	saltedUserPswd := authPswdManager.HashPassword(userPswd, new_salt)
