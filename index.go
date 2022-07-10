@@ -25,12 +25,6 @@ const (
 	SALT_SIZE   = 16
 )
 
-func printMessage(message string) {
-	fmt.Println("")
-	fmt.Println(message)
-	fmt.Println("")
-}
-
 func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
@@ -46,7 +40,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 		'%s', '%s', '%s'
 	) returning user_id
 	`, userName, saltedUserPswd, userEmail)
-	printMessage("Regist Users..")
+	meth.PrintMessage("Regist Users..")
 	err_1 := db.QueryRow(query_1).Scan(&lastInsertID)
 	meth.CheckErr(err_1)
 	query_2 := fmt.Sprintf(`
@@ -66,7 +60,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
 	db := setupDB()
-	printMessage("Get User like login..")
+	meth.PrintMessage("Get User like login..")
 	get_salt_query := fmt.Sprintf(`
 		select salt from t_unicorn.user_auth_salt uas
 		where uas.username = '%s'
@@ -113,7 +107,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 func JWTValidator(w http.ResponseWriter, r *http.Request) {
 	T, err := r.Cookie("access-token")
 	str_t := strings.Replace(T.String(), "access-token=", "", -1)
-	printMessage("TOKEN : " + str_t)
+	meth.PrintMessage("TOKEN : " + str_t)
 
 	token, err := jwt.Parse(str_t, func(token *jwt.Token) (interface{}, error) {
 		return []byte("t_unicorn"), nil
@@ -128,7 +122,7 @@ func JWTValidator(w http.ResponseWriter, r *http.Request) {
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	db := setupDB()
-	printMessage("Getting Users..")
+	meth.PrintMessage("Getting Users..")
 	rows, err := db.Query(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
 	meth.CheckErr(err)
 	fmt.Println(rows.Next())
