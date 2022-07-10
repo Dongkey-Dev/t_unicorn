@@ -5,6 +5,11 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"os"
+	"strconv"
+	"t_unicorn/meth"
+
+	"github.com/joho/godotenv"
 )
 
 func GenerateRandomSaltHex(saltSize int) string {
@@ -15,6 +20,13 @@ func GenerateRandomSaltHex(saltSize int) string {
 	}
 	salt_hex := hex.EncodeToString(salt)
 	return salt_hex
+}
+
+func GetSaltSize() int {
+	err := godotenv.Load()
+	meth.CheckErr(err)
+	SALT_SIZE, _ := strconv.Atoi(os.Getenv("SALT_SIZE"))
+	return SALT_SIZE
 }
 
 func implementsBar(v interface{}) bool {
