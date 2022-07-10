@@ -1,11 +1,18 @@
 package meth
 
-import(
-  "database/sql"
+import (
+	"database/sql"
+	"fmt"
 )
 
-func CheckErr(e error){
-  if e!=nil && e!=sql.ErrNoRows{
-    panic(e)
-  }
+func PrintMessage(message string) {
+	fmt.Println("")
+	fmt.Println(message)
+	fmt.Println("")
+}
+
+func CheckErr(e error) {
+	if e != nil && e != sql.ErrNoRows {
+		panic(e)
+	}
 }
