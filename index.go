@@ -103,11 +103,12 @@ func JWTValidator(w http.ResponseWriter, r *http.Request) {
 	T, err := r.Cookie("access-token")
 	str_t := strings.Replace(T.String(), "access-token=", "", -1)
 	meth.PrintMessage("TOKEN : " + str_t)
-
 	token, err := jwt.Parse(str_t, func(token *jwt.Token) (interface{}, error) {
-		return []byte("t_unicorn"), nil
+		return []byte(jwtHandler.GetJWTSignature()), nil
 	})
 	meth.CheckErr(err)
+	c, _ := token.Claims.(jwt.MapClaims)
+	fmt.Println(c["Email"])
 	if _, ok := token.Claims.(jwt.Claims); ok && token.Valid {
 		fmt.Printf("Token valid.")
 	} else {
@@ -142,6 +143,6 @@ func main() {
 	router.HandleFunc("/GetUsers", GetUsers).Methods("GET")
 	router.HandleFunc("/JWTValidator", JWTValidator).Methods("GET")
 	router.HandleFunc("/GetUser", GetUser).Methods("POST")
-	fmt.Println("Server at 8080")
-	log.Fatal(http.ListenAndServe("localhost:8080", router))
+	fmt.Println("Server at 33443")
+	log.Fatal(http.ListenAndServe("localhost:33443", router))
 }
