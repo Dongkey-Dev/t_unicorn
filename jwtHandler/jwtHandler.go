@@ -18,7 +18,7 @@ func GetJWTClaims() jwt.Claims {
 func CreateJWT(Email string) (string, error) {
 	err := godotenv.Load()
 	meth.CheckErr(err)
-	signingKey := []byte(os.Getenv("CLAIMS_WORD")) //need to change local env file
+	signingKey := []byte(os.Getenv("CLAIMS_WORD"))
 	Tok := jwt.New(jwt.SigningMethodHS256)
 	claims := Tok.Claims.(jwt.MapClaims)
 	claims["Email"] = Email
@@ -27,4 +27,10 @@ func CreateJWT(Email string) (string, error) {
 	tk, err := Tok.SignedString(signingKey)
 	meth.CheckErr(err)
 	return tk, nil
+}
+
+func GetJWTSignature() string {
+	err := godotenv.Load()
+	meth.CheckErr(err)
+	return os.Getenv("CLAIMS_WORD")
 }
