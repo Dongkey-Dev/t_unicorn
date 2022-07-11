@@ -19,34 +19,26 @@ import (
 )
 
 func RegistUser(w http.ResponseWriter, r *http.Request) {
-	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
-	userEmail := r.FormValue("email")
+	userName := r.FormValue("username")
 	db := dbHandler.SetupDB()
 
 	SALT_SIZE := authPswdManager.GetSaltSize()
 	new_salt := authPswdManager.GenerateRandomSaltHex(SALT_SIZE)
 	var lastInsertID int
 	saltedUserPswd := authPswdManager.HashPassword(userPswd, new_salt)
-	query_1 := fmt.Sprintf(`
-	INSERT INTO t_unicorn.user_auth(
-		username, password, email
-	) VALUES(
-		'%s', '%s', '%s'
-	) returning user_id
-	`, userName, saltedUserPswd, userEmail)
-	meth.PrintMessage("Regist Users..")
-	err_1 := db.QueryRow(query_1).Scan(&lastInsertID)
-	meth.CheckErr(err_1)
-	query_2 := fmt.Sprintf(`
-	INSERT INTO t_unicorn.user_auth_salt(
-		user_id, username, salt
-	) VALUES(
-		'%d', '%s', '%s'
-	)
-	`, lastInsertID, userName, new_salt)
-	err_2 := db.QueryRow(query_2).Scan(&lastInsertID)
-	meth.CheckErr(err_2)
+	query := dbHandler.GetRegistUserAuthQuery(r, saltedUserPswd)
+	meth.PrintMessage("Regist UserAuth")
+	err := db.QueryRow(query).Scan(&lastInsertID)
+	meth.CheckErr(err)
+	query = dbHandler.GetRegistUserAuthSaltQuery(lastInsertID, userName, new_salt)
+	meth.PrintMessage("Regist UserAuthSalt")
+	err = db.QueryRow(query).Scan(&lastInsertID)
+	meth.CheckErr(err)
+	query = dbHandler.GetRegistUserInfoQuery(r, lastInsertID)
+	meth.PrintMessage("Regist UserInfo")
+	err = db.QueryRow(query).Scan(&lastInsertID)
+	meth.CheckErr(err)
 	response := models.JsonResponse{Type: "success", Message: "%s registed."}
 	json.NewEncoder(w).Encode(response)
 }
@@ -56,11 +48,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	userPswd := r.FormValue("userpswd")
 	db := dbHandler.SetupDB()
 	meth.PrintMessage("Get User like login..")
-	get_salt_query := fmt.Sprintf(`
-		select salt from t_unicorn.user_auth_salt uas
-		where uas.username = '%s'
-	`, userName)
-	rows, err := db.Query(get_salt_query)
+	query := dbHandler.GetUserSaltQuery(r)
+	rows, err := db.Query(query)
 	defer rows.Close()
 	var salt_hex string
 	for rows.Next() {
@@ -69,11 +58,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	userPswdHash := authPswdManager.HashPassword(userPswd, salt_hex)
 	meth.CheckErr(err)
-	query := fmt.Sprintf(`
-		select user_id, username, email, created_on from t_unicorn.user_auth ua
-		where ua.username = '%s' and 
-		ua.password = '%s'
-	`, userName, userPswdHash)
+	query = dbHandler.GetUserAuthQuery(userName, userPswdHash)
 	rows, err = db.Query(query)
 	meth.CheckErr(err)
 	var users []models.User
@@ -119,7 +104,8 @@ func JWTValidator(w http.ResponseWriter, r *http.Request) {
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	db := dbHandler.SetupDB()
 	meth.PrintMessage("Getting Users..")
-	rows, err := db.Query(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
+	query := dbHandler.GetUsersQuery()
+	rows, err := db.Query(query)
 	meth.CheckErr(err)
 	fmt.Println(rows.Next())
 	var users []models.User
