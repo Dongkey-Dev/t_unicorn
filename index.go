@@ -9,7 +9,7 @@ import (
 	"t_unicorn/authPswdManager"
 	"t_unicorn/dbHandler"
 	"t_unicorn/jwtHandler"
-	"t_unicorn/meth"
+	. "t_unicorn/meth"
 	"t_unicorn/models"
 	"time"
 
@@ -28,17 +28,17 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	var lastInsertID int
 	saltedUserPswd := authPswdManager.HashPassword(userPswd, new_salt)
 	query := dbHandler.GetRegistUserAuthQuery(r, saltedUserPswd)
-	meth.PrintMessage("Regist UserAuth")
+	PrintMessage("Regist UserAuth")
 	err := db.QueryRow(query).Scan(&lastInsertID)
-	meth.CheckErr(err)
+	CheckErr(err)
 	query = dbHandler.GetRegistUserAuthSaltQuery(lastInsertID, userName, new_salt)
-	meth.PrintMessage("Regist UserAuthSalt")
+	PrintMessage("Regist UserAuthSalt")
 	err = db.QueryRow(query).Scan(&lastInsertID)
-	meth.CheckErr(err)
+	CheckErr(err)
 	query = dbHandler.GetRegistUserInfoQuery(r, lastInsertID)
-	meth.PrintMessage("Regist UserInfo")
+	PrintMessage("Regist UserInfo")
 	err = db.QueryRow(query).Scan(&lastInsertID)
-	meth.CheckErr(err)
+	CheckErr(err)
 	response := models.JsonResponse{Type: "success", Message: "%s registed."}
 	json.NewEncoder(w).Encode(response)
 }
@@ -47,20 +47,20 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("username")
 	userPswd := r.FormValue("userpswd")
 	db := dbHandler.SetupDB()
-	meth.PrintMessage("Get User like login..")
+	PrintMessage("Get User like login..")
 	query := dbHandler.GetUserSaltQuery(r)
 	rows, err := db.Query(query)
 	defer rows.Close()
 	var salt_hex string
 	for rows.Next() {
 		err := rows.Scan(&salt_hex)
-		meth.CheckErr(err)
+		CheckErr(err)
 	}
 	userPswdHash := authPswdManager.HashPassword(userPswd, salt_hex)
-	meth.CheckErr(err)
+	CheckErr(err)
 	query = dbHandler.GetUserAuthQuery(userName, userPswdHash)
 	rows, err = db.Query(query)
-	meth.CheckErr(err)
+	CheckErr(err)
 	var users []models.User
 	for rows.Next() {
 		var user_id int
@@ -69,11 +69,11 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		var created_on string
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
-		meth.CheckErr(err)
+		CheckErr(err)
 		users = append(users, models.User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
 	accessToken, err := jwtHandler.CreateJWT(users[0].UserEmail)
-	meth.CheckErr(err)
+	CheckErr(err)
 	cookie := new(http.Cookie)
 	cookie.Name = "access-token"
 	cookie.Value = accessToken
@@ -87,11 +87,11 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 func JWTValidator(w http.ResponseWriter, r *http.Request) {
 	T, err := r.Cookie("access-token")
 	str_t := strings.Replace(T.String(), "access-token=", "", -1)
-	meth.PrintMessage("TOKEN : " + str_t)
+	PrintMessage("TOKEN : " + str_t)
 	token, err := jwt.Parse(str_t, func(token *jwt.Token) (interface{}, error) {
 		return []byte(jwtHandler.GetJWTSignature()), nil
 	})
-	meth.CheckErr(err)
+	CheckErr(err)
 	c, _ := token.Claims.(jwt.MapClaims)
 	fmt.Println(c["Email"])
 	if _, ok := token.Claims.(jwt.Claims); ok && token.Valid {
@@ -103,10 +103,10 @@ func JWTValidator(w http.ResponseWriter, r *http.Request) {
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	db := dbHandler.SetupDB()
-	meth.PrintMessage("Getting Users..")
+	PrintMessage("Getting Users..")
 	query := dbHandler.GetUsersQuery()
 	rows, err := db.Query(query)
-	meth.CheckErr(err)
+	CheckErr(err)
 	fmt.Println(rows.Next())
 	var users []models.User
 	for rows.Next() {
@@ -116,19 +116,24 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		var created_on string
 
 		err = rows.Scan(&user_id, &username, &email, &created_on)
-		meth.CheckErr(err)
+		CheckErr(err)
 		users = append(users, models.User{UserID: user_id, UserName: username, UserEmail: email, UserCreatedOn: created_on})
 	}
 	var response = models.JsonResponse{Type: "success", Data: users}
 	json.NewEncoder(w).Encode(response)
 }
 
+func MockRegistUsers(w http.ResponseWriter, r *http.Request) {
+	db := dbHandler.SetupDB()
+}
+
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/RegistUser", RegistUser).Methods("POST")
-	router.HandleFunc("/GetUsers", GetUsers).Methods("GET")
-	router.HandleFunc("/JWTValidator", JWTValidator).Methods("GET")
-	router.HandleFunc("/GetUser", GetUser).Methods("POST")
+	router.HandleFunc("/RegistUser", RegistUser).methods("POST")
+	router.HandleFunc("/GetUsers", GetUsers).ds("GET")
+	router.HandleFunc("/JWTValidator", JWTValidator).ds("GET")
+	router.HandleFunc("/GetUser", GetUser).ds("POST")
+	router.HandleFunc("/MockRegistUsers", MockRegistUsers).ds("GET")
 	fmt.Println("Server at 33443")
 	log.Fatal(http.ListenAndServe("localhost:33443", router))
 }
