@@ -12,7 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func GenerateRandomSaltHex(saltSize int) string {
+func generateRandomSaltHex(saltSize int) string {
 	var salt = make([]byte, saltSize)
 	_, err := rand.Read(salt[:])
 	if err != nil {
@@ -22,7 +22,7 @@ func GenerateRandomSaltHex(saltSize int) string {
 	return salt_hex
 }
 
-func GetSaltSize() int {
+func getSaltSize() int {
 	err := godotenv.Load()
 	meth.CheckErr(err)
 	SALT_SIZE, _ := strconv.Atoi(os.Getenv("SALT_SIZE"))
@@ -55,4 +55,11 @@ func DoPasswordsMatch(hashedPassword, currPassword string, salt []byte) bool {
 	salt_hex := hex.EncodeToString(salt)
 	var currPasswordHash = HashPassword(currPassword, salt_hex)
 	return hashedPassword == currPasswordHash
+}
+
+func GetSaltedUserPswd(userPswd string) (string, string) {
+	SALT_SIZE := getSaltSize()
+	new_salt := generateRandomSaltHex(SALT_SIZE)
+	saltedUserPswd := HashPassword(userPswd, new_salt)
+	return new_salt, saltedUserPswd
 }

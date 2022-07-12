@@ -7,6 +7,14 @@ type User struct {
 	UserCreatedOn string `json:"usercreatedon"`
 }
 
+type UserInfo struct {
+	UserID int    `json:"userid"`
+	Name   string `json:"name"`
+	DOB    string `json:"dob"`
+	Gender string `json:"gender"`
+	Phone  string `json:"phone"`
+}
+
 type UserSequenceID struct {
 	nextval int `json:"userid"`
 }

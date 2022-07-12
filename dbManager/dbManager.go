@@ -78,6 +78,12 @@ func GetUserAuthQuery(userName string, userPswdHash string) string {
 }
 
 func GetUsersQuery() string {
-	query := fmt.Sprintf(`SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;`)
+	query := fmt.Sprintf(`
+	SELECT user_id, username, email, created_on FROM t_unicorn.user_auth;
+	`)
 	return query
+}
+
+func GetUpdateUserInfoQuery() string {
+	return ""
 }
