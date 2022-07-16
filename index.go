@@ -10,6 +10,7 @@ import (
 	dbManager "t_unicorn/dbManager"
 	jwtManager "t_unicorn/jwtManager"
 	. "t_unicorn/meth"
+	"t_unicorn/mock"
 	"t_unicorn/models"
 	"time"
 
@@ -29,6 +30,8 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	query := dbManager.GetRegistUserAuthQuery(r, saltedUserPswd)
 	PrintMessage("Regist UserAuth")
 	err := db.QueryRow(query).Scan(&lastInsertID)
+	fmt.Println(query)
+	fmt.Println(lastInsertID)
 	CheckErr(err)
 	query = dbManager.GetRegistUserAuthSaltQuery(lastInsertID, userName, new_salt)
 	PrintMessage("Regist UserAuthSalt")
@@ -123,8 +126,14 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func MockRegistUsers(w http.ResponseWriter, r *http.Request) {
-	db := dbManager.SetupDB()
-
+	mockUserNum := 10
+	mockUserList := mock.GetMockUser(r, mockUserNum)
+	for i := 0; i < mockUserNum-1; i++ {
+		RegistUser(w, mockUserList[i])
+		time.Sleep(time.Second * 1)
+	}
+	var response = models.JsonResponse{Type: "success", Message: fmt.Sprintf("%d mock user regist success.", mockUserNum)}
+	json.NewEncoder(w).Encode(response)
 }
 
 func main() {
