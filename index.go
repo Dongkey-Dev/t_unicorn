@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"t_unicorn/authPswdManager"
 	dbManager "t_unicorn/dbManager"
@@ -18,6 +19,8 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
+
+var LAST_MOCK_ID int = 1
 
 func RegistUser(w http.ResponseWriter, r *http.Request) {
 	userPswd := r.FormValue("userpswd")
@@ -41,7 +44,7 @@ func RegistUser(w http.ResponseWriter, r *http.Request) {
 	PrintMessage("Regist UserInfo")
 	err = db.QueryRow(query).Scan(&lastInsertID)
 	CheckErr(err)
-	response := models.JsonResponse{Type: "success", Message: "%s registed."}
+	response := models.JsonResponse{Type: "success", Message: fmt.Sprintf("%s registed.", userName)}
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -127,11 +130,14 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 func MockRegistUsers(w http.ResponseWriter, r *http.Request) {
 	mockUserNum := 10
-	mockUserList := mock.GetMockUser(r, mockUserNum)
-	for i := 0; i < mockUserNum-1; i++ {
+	mockUserList := mock.GetMockUser(r, LAST_MOCK_ID, mockUserNum)
+	PrintMessage("MOCK USER LIST LEN : " + strconv.Itoa(len(mockUserList)))
+	for i := 0; i < mockUserNum; i++ {
 		RegistUser(w, mockUserList[i])
-		time.Sleep(time.Second * 1)
+		PrintMessage("IN FOR : " + strconv.Itoa(i))
 	}
+	LAST_MOCK_ID += mockUserNum
+	PrintMessage(strconv.Itoa(LAST_MOCK_ID))
 	var response = models.JsonResponse{Type: "success", Message: fmt.Sprintf("%d mock user regist success.", mockUserNum)}
 	json.NewEncoder(w).Encode(response)
 }

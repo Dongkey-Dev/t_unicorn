@@ -25,10 +25,10 @@ func mapToRequest(r *http.Request, M map[string]string) *http.Request {
 	return r
 }
 
-func GetMockUser(r *http.Request, num int) []*http.Request {
+func GetMockUser(r *http.Request, LAST_MOCK_ID int, num int) []*http.Request {
 	twoGender := []string{"male", "female"}
 	var mockUsers []*http.Request
-	for i := 1; i < num; i++ {
+	for i := LAST_MOCK_ID; i < LAST_MOCK_ID+num+1; i++ {
 		r_c := r.Clone(r.Context())
 		var statementMap map[string]string
 		statementMap = map[string]string{}
